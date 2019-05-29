@@ -2,8 +2,10 @@ import keras as k
 import tensorflow as tf
 import numpy as np
 
-from config import GRID_H, GRID_W, BATCH_SIZE, BOX,\
-    ANCHORS, COORD_SCALE, CLASS_SCALE, OBJECT_SCALE, NO_OBJECT_SCALE, CLASS_WEIGHTS, WARM_UP_BATCHES
+from config import GRID_H, GRID_W, BATCH_SIZE, BOX, CLASS, \
+    ANCHORS, WARM_UP_BATCHES
+
+from config import NO_OBJECT_SCALE, OBJECT_SCALE, COORD_SCALE, CLASS_SCALE, CLASS_WEIGHTS
 
 
 def custom_loss(y_true, y_pred):
@@ -161,3 +163,70 @@ def custom_loss(y_true, y_pred):
     loss = tf.Print(loss, [total_recall / seen], message='Average Recall \t', summarize=1000)
 
     return loss
+
+
+def my_custom_loss(y_true, y_pred):
+    """
+    Usually the input size of the network's output will be [None, 13, 13, 5, 9]
+    [Batch size, Grid H, Grid W, Box(Anchors), confidence(1) + BBox(4) + Classes(labels:3)+ background(1)]
+    :param y_true:
+    :param y_pred:
+    :return:
+    """
+
+    """True data label distribution"""
+    true_conf = y_true[..., 0:1]
+    true_xy = y_true[..., 1:3]
+    true_wh = y_true[..., 3:5]
+    true_classes = y_true[..., 5:5 + CLASS+1]
+    true_classes_rearranged = tf.reshape(true_classes, [BATCH_SIZE * GRID_H * GRID_W * BOX, CLASS + 1])
+
+    true_mask = tf.cast(true_conf > 0.5, tf.float64)
+    true_no_obj_mask = tf.cast(true_conf < 0.5, tf.float64)
+    true_mask_2_channel = tf.concat([true_mask, true_mask], axis=-1)
+    true_mask_n_channel = tf.cast(true_classes_rearranged[:, CLASS] < 0.5, tf.float64)
+
+    """Pred data label distribution"""
+    pred_conf = tf.sigmoid(y_pred[..., 0:1])
+    pred_xy = tf.sigmoid(y_pred[..., 1:3])
+    pred_wh = tf.exp(y_pred[..., 3:5])
+    pred_classes = tf.nn.softmax(y_pred[..., 5:5 + CLASS+1])
+    pred_classes_rearranged = tf.reshape(pred_classes, [BATCH_SIZE * GRID_H * GRID_W * BOX, CLASS + 1])
+
+
+    loss_xy = COORD_SCALE * tf.reduce_sum(tf.square(true_xy - pred_xy )* true_mask_2_channel)
+    loss_wh = COORD_SCALE * tf.reduce_sum(tf.square(true_wh - pred_wh) * true_mask_2_channel)
+    loss_conf = OBJECT_SCALE * tf.reduce_sum(tf.square(true_conf - pred_conf) * true_mask)
+    loss_class_temp = tf.nn.softmax_cross_entropy_with_logits(labels=true_classes_rearranged,
+                                                         logits=pred_classes_rearranged)
+    loss_class_temp = k.backend.categorical_crossentropy(target=true_classes_rearranged,
+                                                         output=pred_classes_rearranged)
+    loss_class = tf.reduce_sum(loss_class_temp * true_mask_n_channel)
+
+    no_obj_loss = NO_OBJECT_SCALE * tf.reduce_sum(tf.square(true_conf - pred_conf) * true_no_obj_mask)
+
+    loss = loss_xy + loss_wh + loss_conf + loss_class + no_obj_loss
+
+    loss = tf.Print(loss, [tf.zeros((1))], message='Dummy Line \t', summarize=1000)
+    loss = tf.Print(loss, [loss_xy], message='Loss XY \t', summarize=1000)
+    loss = tf.Print(loss, [loss_wh], message='Loss WH \t', summarize=1000)
+    loss = tf.Print(loss, [loss_conf], message='Loss Conf \t', summarize=1000)
+    loss = tf.Print(loss, [no_obj_loss], message='no_obj_loss \t', summarize=1000)
+    loss = tf.Print(loss, [loss_class], message='Loss Class \t', summarize=1000)
+    loss = tf.Print(loss, [loss], message='Total Loss \t', summarize=1000)
+    return loss
+
+
+if False:
+    import data_generator as dg
+    batch_generator = dg.BatchGenerator(r'data/full_dataset.csv',
+                                 r'D:\Vinoj\HandsOnCV\object_detection\FRCNN\BCCD_Dataset-master\BCCD\JPEGImages/')
+
+    for data in batch_generator:
+        break
+
+    y_true = data[1]
+
+    loss = my_custom_loss(y_true, y_true)
+    sess = tf.Session()
+    print(sess.run(loss))

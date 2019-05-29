@@ -14,7 +14,7 @@ early_stop = EarlyStopping(monitor='val_loss',
                            mode='min',
                            verbose=1)
 
-checkpoint = ModelCheckpoint('weights_coco.h5',
+checkpoint = ModelCheckpoint('weights_blood.h5',
                              monitor='val_loss',
                              verbose=1,
                              save_best_only=True,
@@ -39,5 +39,6 @@ model.fit_generator(generator        = batch_generator,
                     steps_per_epoch  = len(batch_generator),
                     epochs           = 100,
                     verbose          = 1,
-                    callbacks        = [early_stop, checkpoint, tensorboard],
-                    max_queue_size   = 3)
+                    callbacks        = [early_stop, checkpoint, tensorboard])
+
+model.save("trained_blood.h5")

@@ -135,8 +135,8 @@ def model_creation(IMAGE_H, IMAGE_W, TRUE_BOX_BUFFER, GRID_H, GRID_W, BOX, CLASS
     x = LeakyReLU(alpha=0.1)(x)
 
     # Layer 23
-    x = Conv2D(BOX * (4 + 1 + CLASS), (1,1), strides=(1,1), padding='same', name='conv_23')(x)
-    output = Reshape((GRID_H, GRID_W, BOX, 4 + 1 + CLASS))(x)
+    x = Conv2D(BOX * (4 + 1 + CLASS+1), (1,1), strides=(1,1), padding='same', name='conv_23')(x)
+    output = Reshape((GRID_H, GRID_W, BOX, 4 + 1 + CLASS + 1))(x)
 
     # small hack to allow true_boxes to be registered when Keras build the model
     # for more information: https://github.com/fchollet/keras/issues/2790

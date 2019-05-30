@@ -219,8 +219,7 @@ def my_custom_loss(y_true, y_pred):
         loss = tf.Print(loss, [loss], message='Total Loss \t', summarize=1000)
     return loss
 
-
-
+if False:
     import data_generator as dg
     batch_generator = dg.BatchGenerator(r'data/full_dataset.csv',
                                  r'/home/vinoj/vinoj/keras-frcnn/JPEGImages/')

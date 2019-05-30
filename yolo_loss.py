@@ -207,7 +207,7 @@ def my_custom_loss(y_true, y_pred):
 
     loss = loss_xy + loss_wh + loss_conf + loss_class + no_obj_loss
     
-    loss = loss / (BATCH_SIZE * tf.reduce_sum(true_mask) + 1) 
+    loss = loss / (BATCH_SIZE) 
 
     if False:
         loss = tf.Print(loss, [tf.zeros((1))], message='Dummy Line \t', summarize=1000)

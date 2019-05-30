@@ -199,7 +199,7 @@ class BatchGenerator(Sequence):
 
             img_aug, rect_aug_list = self.image_augmentation(img, rect_list)
             true_box_index = 0
-            for i, rect in enumerate(rect_list):
+            for i, rect in enumerate(rect_aug_list):
 
                 # rect = obj['rect']
                 class_name = class_list[i]
@@ -216,7 +216,7 @@ class BatchGenerator(Sequence):
                     obj_index = LABELS.index(class_name)
 
                     center_w = (rect[2] - rect[0]) / self.grid_ratio_w  # unit: grid cell
-                    center_h = (rect[3] - rect[1]) / self.grid_ratio_w  # unit: grid cell
+                    center_h = (rect[3] - rect[1]) / self.grid_ratio_h  # unit: grid cell
 
                     box = [center_x, center_y, center_w, center_h]
                     # find the anchor that best predicts this box

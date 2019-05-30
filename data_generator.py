@@ -8,7 +8,7 @@ import pandas as pd
 import imgaug as ia
 import imgaug.augmenters as iaa
 import imgaug.parameters as iap
-from imgaug.augmentables.bbs import BoundingBox, BoundingBoxesOnImage
+from imgaug import BoundingBox, BoundingBoxesOnImage
 
 
 class BoundBox:
@@ -53,7 +53,7 @@ class BatchGenerator(Sequence):
         self.shuffle = shuffle
 
         self.seq = iaa.Sequential([
-            iaa.Resize({"height": IMAGE_H, "width": "keep-aspect-ratio"}),
+            iaa.Scale({"height": IMAGE_H, "width": "keep-aspect-ratio"}),
             iaa.CropToFixedSize(height=IMAGE_H, width=IMAGE_W),
             iaa.Sometimes(0.5, iaa.Multiply((0.9, 1.2))),
             iaa.Sometimes(0.5, iaa.Affine(scale=(0.75, 1.25))),
@@ -176,9 +176,9 @@ class BatchGenerator(Sequence):
 
         instance_count = 0
 
-        x_batch = np.zeros((BATCH_SIZE, IMAGE_H, IMAGE_W, 3))  # input images
-        b_batch = np.zeros((BATCH_SIZE, 1, 1, 1, TRUE_BOX_BUFFER, 4))  # GT boxes
-        y_batch = np.zeros((BATCH_SIZE, GRID_H, GRID_W, BOX, 4 + 1 + CLASS + 1))  # desired network output
+        x_batch = np.zeros((BATCH_SIZE, IMAGE_H, IMAGE_W, 3), np.float32)  # input images
+        b_batch = np.zeros((BATCH_SIZE, 1, 1, 1, TRUE_BOX_BUFFER, 4), np.float32)  # GT boxes
+        y_batch = np.zeros((BATCH_SIZE, GRID_H, GRID_W, BOX, 4 + 1 + CLASS + 1), np.float32)  # desired network output
 
         # confidence_for_non_class
         y_batch[..., -1] = 1

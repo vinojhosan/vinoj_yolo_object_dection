@@ -181,10 +181,10 @@ def my_custom_loss(y_true, y_pred):
     true_classes = y_true[..., 5:5 + CLASS+1]
     true_classes_rearranged = tf.reshape(true_classes, [BATCH_SIZE * GRID_H * GRID_W * BOX, CLASS + 1])
 
-    true_mask = tf.cast(true_conf > 0.5, tf.float64)
-    true_no_obj_mask = tf.cast(true_conf < 0.5, tf.float64)
+    true_mask = tf.cast(true_conf > 0.5, tf.float32)
+    true_no_obj_mask = tf.cast(true_conf < 0.5, tf.float32)
     true_mask_2_channel = tf.concat([true_mask, true_mask], axis=-1)
-    true_mask_n_channel = tf.cast(true_classes_rearranged[:, CLASS] < 0.5, tf.float64)
+    true_mask_n_channel = tf.cast(true_classes_rearranged[:, CLASS] < 0.5, tf.float32)
 
     """Pred data label distribution"""
     pred_conf = tf.sigmoid(y_pred[..., 0:1])
@@ -206,21 +206,24 @@ def my_custom_loss(y_true, y_pred):
     no_obj_loss = NO_OBJECT_SCALE * tf.reduce_sum(tf.square(true_conf - pred_conf) * true_no_obj_mask)
 
     loss = loss_xy + loss_wh + loss_conf + loss_class + no_obj_loss
+    
+    loss = loss / (BATCH_SIZE * tf.reduce_sum(true_mask) + 1) 
 
-    loss = tf.Print(loss, [tf.zeros((1))], message='Dummy Line \t', summarize=1000)
-    loss = tf.Print(loss, [loss_xy], message='Loss XY \t', summarize=1000)
-    loss = tf.Print(loss, [loss_wh], message='Loss WH \t', summarize=1000)
-    loss = tf.Print(loss, [loss_conf], message='Loss Conf \t', summarize=1000)
-    loss = tf.Print(loss, [no_obj_loss], message='no_obj_loss \t', summarize=1000)
-    loss = tf.Print(loss, [loss_class], message='Loss Class \t', summarize=1000)
-    loss = tf.Print(loss, [loss], message='Total Loss \t', summarize=1000)
+    if False:
+        loss = tf.Print(loss, [tf.zeros((1))], message='Dummy Line \t', summarize=1000)
+        loss = tf.Print(loss, [loss_xy], message='Loss XY \t', summarize=1000)
+        loss = tf.Print(loss, [loss_wh], message='Loss WH \t', summarize=1000)
+        loss = tf.Print(loss, [loss_conf], message='Loss Conf \t', summarize=1000)
+        loss = tf.Print(loss, [no_obj_loss], message='no_obj_loss \t', summarize=1000)
+        loss = tf.Print(loss, [loss_class], message='Loss Class \t', summarize=1000)
+        loss = tf.Print(loss, [loss], message='Total Loss \t', summarize=1000)
     return loss
 
 
-if False:
+
     import data_generator as dg
     batch_generator = dg.BatchGenerator(r'data/full_dataset.csv',
-                                 r'D:\Vinoj\HandsOnCV\object_detection\FRCNN\BCCD_Dataset-master\BCCD\JPEGImages/')
+                                 r'/home/vinoj/vinoj/keras-frcnn/JPEGImages/')
 
     for data in batch_generator:
         break

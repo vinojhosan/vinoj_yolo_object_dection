@@ -189,7 +189,7 @@ def my_custom_loss(y_true, y_pred):
     """Pred data label distribution"""
     pred_conf = tf.sigmoid(y_pred[..., 0:1])
     pred_xy = tf.sigmoid(y_pred[..., 1:3])
-    pred_wh = tf.exp(y_pred[..., 3:5])
+    pred_wh = tf.sigmoid(y_pred[..., 3:5])
     pred_classes = tf.nn.softmax(y_pred[..., 5:5 + CLASS+1])
     pred_classes_rearranged = tf.reshape(pred_classes, [BATCH_SIZE * GRID_H * GRID_W * BOX, CLASS + 1])
 
@@ -197,8 +197,7 @@ def my_custom_loss(y_true, y_pred):
     loss_xy = COORD_SCALE * tf.reduce_mean(tf.square(true_xy - pred_xy )* true_mask_2_channel)
     loss_wh = COORD_SCALE * tf.reduce_mean(tf.square(true_wh - pred_wh) * true_mask_2_channel)
     loss_conf = OBJECT_SCALE * tf.reduce_mean(tf.square(true_conf - pred_conf) * true_mask)
-    loss_class_temp = tf.nn.softmax_cross_entropy_with_logits(labels=true_classes_rearranged,
-                                                         logits=pred_classes_rearranged)
+    
     loss_class_temp = k.backend.categorical_crossentropy(target=true_classes_rearranged,
                                                          output=pred_classes_rearranged)
     loss_class = tf.reduce_mean(loss_class_temp * true_mask_n_channel)

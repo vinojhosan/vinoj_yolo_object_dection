@@ -194,15 +194,15 @@ def my_custom_loss(y_true, y_pred):
     pred_classes_rearranged = tf.reshape(pred_classes, [BATCH_SIZE * GRID_H * GRID_W * BOX, CLASS + 1])
 
 
-    loss_xy = COORD_SCALE * tf.reduce_mean(tf.square(true_xy - pred_xy )* true_mask_2_channel)
-    loss_wh = COORD_SCALE * tf.reduce_mean(tf.square(true_wh - pred_wh) * true_mask_2_channel)
-    loss_conf = OBJECT_SCALE * tf.reduce_mean(tf.square(true_conf - pred_conf) * true_mask)
+    loss_xy = COORD_SCALE * tf.reduce_sum(tf.square(true_xy - pred_xy )* true_mask_2_channel)
+    loss_wh = COORD_SCALE * tf.reduce_sum(tf.square(true_wh - pred_wh) * true_mask_2_channel)
+    loss_conf = OBJECT_SCALE * tf.reduce_sum(tf.square(true_conf - pred_conf) * true_mask)
     
     loss_class_temp = k.backend.categorical_crossentropy(target=true_classes_rearranged,
                                                          output=pred_classes_rearranged)
-    loss_class = tf.reduce_mean(loss_class_temp * true_mask_n_channel)
+    loss_class = tf.reduce_sum(loss_class_temp * true_mask_n_channel)
 
-    no_obj_loss = NO_OBJECT_SCALE * tf.reduce_mean(tf.square(true_conf - pred_conf) * true_no_obj_mask)
+    no_obj_loss = NO_OBJECT_SCALE * tf.reduce_sum(tf.square(true_conf - pred_conf) * true_no_obj_mask)
 
     loss = loss_xy + loss_wh + loss_conf + loss_class + no_obj_loss
     

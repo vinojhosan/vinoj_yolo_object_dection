@@ -17,8 +17,7 @@ model = yolo_model.model_creation(IMAGE_H, IMAGE_W, TRUE_BOX_BUFFER, GRID_H, GRI
 
 model.load_weights('trained_blood.h5')
 
-batch_generator = BatchGenerator(r'data/full_dataset.csv',
-                                 r'D:\Vinoj\HandsOnCV\object_detection\FRCNN\BCCD_Dataset-master\BCCD\JPEGImages/')
+batch_generator = BatchGenerator(r'data/full_dataset.csv', r'/home/vinoj/vinoj/keras-frcnn/JPEGImages/')
 
 def get_bounding_box(row_vector):
 

@@ -3,7 +3,7 @@ import sys
 import tensorflow as tf
 import keras as k
 
-from synthetic_dataset import *
+from ssd_simple_generator import *
 
 
 def smooth_L1_loss(y_true, y_pred, total_mask):
@@ -35,6 +35,33 @@ def log_loss(y_true, y_pred):
     log_loss = -tf.reduce_sum(y_true * tf.log(y_pred), axis=-1)
 
     return log_loss
+
+
+def simple_ssd_loss(y_true, y_pred):
+
+    sh = tf.shape(y_true)
+    n_class = 3
+    true_conf = y_true[:, :, :, 0:n_class]
+    pred_conf = y_pred[:, :, :, 0:n_class]
+
+    true_centre = y_true[:, :, :, n_class:3*n_class]
+    pred_centre = y_pred[:, :, :, n_class:3*n_class]
+
+    # conf_loss = tf.keras.backend.mean(tf.keras.backend.binary_crossentropy(true_conf, pred_conf))
+    # pred_conf = tf.sigmoid(pred_conf)
+    conf_loss = tf.reduce_mean(tf.keras.backend.binary_crossentropy(true_conf, pred_conf))
+    conf_loss = conf_loss * 4
+
+    # Find loss for only that 1 specific grid location from 16x16
+    true_points = true_conf > 0.1  # Check if positive, then in that grid box
+    true_points = tf.cast(true_points, tf.float32)
+    true_points_2channel = tf.concat((true_points, true_points), axis=3)
+    centre_pred_at_location = true_points_2channel * pred_centre
+
+    centre_loss = tf.reduce_mean(tf.square(true_centre - centre_pred_at_location), keepdims=False)
+    # loss = tf.print("shape:", sh, "conf_loss:", conf_loss, "centre_loss:", centre_loss)
+
+    return conf_loss + centre_loss
 
 
 def ssd_loss(y_true, y_pred):
@@ -108,7 +135,7 @@ def ssd_loss(y_true, y_pred):
 
 
 if __name__ == '__main__':
-    syn_gen = SynthenticGenerator(300, 300, batch_size=1)
+    syn_gen = SimpleGenerator((300, 300),(10, 10), batch_size=1)
 
     x_batch, y_batch = syn_gen.__getitem__(0)
     # syn_gen.get_predict2Boxes(x_batch, y_batch)
@@ -116,4 +143,4 @@ if __name__ == '__main__':
     with tf.Session() as sess:
         x = tf.constant(y_batch, tf.float32)
         y = tf.constant(y_batch, tf.float32)
-        print(sess.run(ssd_loss(x, y)))
+        print(sess.run(simple_ssd_loss(x, y)))

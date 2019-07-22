@@ -1,10 +1,11 @@
+import os
 import numpy as np
 import cv2 as cv
 from synthetic_dataset import ShapeDataset
 from keras.utils import Sequence
 
 class SimpleGenerator(Sequence):
-    def __init__(self, image_size, grid, batch_size, n_images):
+    def __init__(self, image_size, grid, batch_size, n_images=500):
 
         self.batch_size = batch_size
         self.n_images = n_images
@@ -41,7 +42,7 @@ class SimpleGenerator(Sequence):
             # augment input image and fix object's position and size
 
             # img_aug, rect_aug_list = self.image_augmentation(img, rect_list)
-            img, shape_rect = self.dataset.generate_image((self.height, self.width), 10)
+            img, shape_rect = self.dataset.generate_image((self.height, self.width), 4)
             true_box_index = 0
             for i, rect_itr in enumerate(shape_rect):
 
@@ -80,7 +81,7 @@ class SimpleGenerator(Sequence):
         return self.n_images // self.batch_size
 
     def get_predict2Boxes(self, x_batch, y_batch):
-
+        out_path = '/mnt/Projects/Lighthouse4_BigData/3_WorkTopics/306_SmartQualityCheck/Development/test_models/out/'
         conf = y_batch[:, :, :, 0:self.n_class]
         conf = conf > 0.5
         print('total box:',  np.sum(conf))
@@ -100,14 +101,15 @@ class SimpleGenerator(Sequence):
             centre_x = c * self.grid_ratio_w + x_offset
             centre_y = r * self.grid_ratio_h + y_offset
 
-            print(x_offset, y_offset, centre_x, centre_y)
+            # print(x_offset, y_offset, centre_x, centre_y)
             predicted_points.append([centre_x, centre_y])
 
             cv.circle(x_batch[b], (int(centre_x), int(centre_y)), 3, (1, 0, 0), -1)
 
         x_batch_reverted = self.inverse_norm(x_batch)
         for b in range(x_batch_reverted.shape[0]):
-            cv.imwrite(str(b).zfill(3)+'.png', x_batch_reverted[b])
+            cv.imwrite(os.path.join(out_path, str(b).zfill(3)+'.png'), x_batch_reverted[b])
+            print('image')
 
 
     def norm(self, img_batch):

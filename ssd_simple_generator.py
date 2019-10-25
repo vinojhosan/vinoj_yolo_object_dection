@@ -1,8 +1,11 @@
 import os
-import numpy as np
+
 import cv2 as cv
-from synthetic_dataset import ShapeDataset
+import numpy as np
 from keras.utils import Sequence
+
+from synthetic.synthetic_dataset import ShapeDataset
+
 
 class SimpleGenerator(Sequence):
     def __init__(self, image_size, grid, batch_size, n_images=500):

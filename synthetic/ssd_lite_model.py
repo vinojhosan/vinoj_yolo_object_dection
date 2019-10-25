@@ -17,6 +17,9 @@ batch_size = 8
 model_out_path = './models'
 os.makedirs(model_out_path, exist_ok=True)
 ds = dataset.SynthenticGenerator((input_h, input_w), (grid_h, grid_w),
+                             batch_size=batch_size, n_images=10000)
+
+val_ds = dataset.SynthenticGenerator((input_h, input_w), (grid_h, grid_w),
                              batch_size=batch_size, n_images=1000)
 
 def get_model():
@@ -74,9 +77,10 @@ def ssd_loss(y_true, y_pred):
 
     positives = tf.math.less(negatives, 0.9)
     positives = tf.cast(positives, tf.float32)
+    positives = tf.expand_dims(positives, axis=2)
 
     positive_mask = tf.concat([positives, positives, positives, positives], axis=-1)
-    positive_mask
+    # positive_mask
     pred_boxes_mask = pred_boxes * positive_mask
 
     box_loss = smooth_L1_loss(true_boxes, pred_boxes_mask)
@@ -110,19 +114,16 @@ def train():
     # pose_aug_generator - Augments and reads images.  Obtains num_keypoints+rgb channels
     history = yolo_model.fit_generator(ds,
                              steps_per_epoch=ds.n_images // batch_size,
-                             epochs=200,
+                             epochs=200,validation_data=val_ds, validation_steps=100,
                              callbacks=callbacks_list)
 
     yolo_model.save(os.path.join(model_out_path, 'trained_model_7x7.hdf5'))
-
-    with open('history.txt', 'w') as f:
-        f.write(history)
 
 
 
 def test():
     yolo_model = get_model()
-    # yolo_model.load_weights(os.path.join(model_out_path, 'weights.best_pose_10x10.hdf5'))
+    yolo_model.load_weights(os.path.join(model_out_path, 'trained_model_7x7.hdf5'))
 
     for g in ds:
         break
@@ -133,4 +134,5 @@ def test():
 
 
 if __name__ == '__main__':
-    train()
+    # train()
+    test()

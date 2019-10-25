@@ -180,6 +180,7 @@ class SynthenticGenerator(Sequence):
         self.n_images = n_images
         self.height = image_size[0]
         self.width = image_size[1]
+        self.shuffle = True
 
         self.anchors = [BoundBox(0, 0, ANCHORS[2 * i], ANCHORS[2 * i + 1])
                         for i in range(int(len(ANCHORS) // 2))]
@@ -284,6 +285,11 @@ class SynthenticGenerator(Sequence):
 
     def get_predict2Boxes(self, x_batch, y_batch):
 
+        box_reshaped = np.reshape(y_batch[:, :, 0:4], (x_batch.shape[0], self.grid_h, self.grid_w, 4))
+        class_reshaped = np.reshape(y_batch[:, :, 4:], (x_batch.shape[0], self.grid_h, self.grid_w, self.dataset.n_class + 1))
+
+        y_batch = np.concatenate([box_reshaped, class_reshaped], axis=-1)
+
         conf = y_batch[:, :, :, -1]
         conf = conf < 0.5
         print('total box:',  np.sum(conf))
@@ -351,8 +357,6 @@ class SynthenticGenerator(Sequence):
 
         return float(intersect) / union
 
-    def on_epoch_end(self):
-        if self.shuffle: np.random.shuffle(self.image_list)
 
 
 
